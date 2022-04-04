@@ -15,12 +15,13 @@ const Add = () => {
   const preview = useSelector((state) => state.image.preview);
   const is_uploading = useSelector((state) => state.image.uploading);
   const addpost = (e) => {
+    e.preventDefault();
     dispatch(actionCreators.addPostFB(contents.current.value));
   };
-  const uploadFB = () => {
-    let image = fileInput.current.files[0];
-    dispatch(uploadImageFB(image));
-  };
+  // const uploadFB = () => {
+  //   let image = fileInput.current.files[0];
+  //   dispatch(uploadImageFB(image));
+  // };
   const selectFile = () => {
     const reader = new FileReader();
     const file = fileInput.current.files[0];
@@ -59,7 +60,6 @@ const Add = () => {
           onChange={selectFile}
           disabled={is_uploading}
         ></input>
-        <button onClick={uploadFB}>테스트업로드</button>
       </Filebox>
       <h3>레이아웃 고르기</h3>
       <Uploadbox>

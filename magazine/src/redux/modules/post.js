@@ -1,19 +1,27 @@
 import { createAction, handleActions } from "redux-actions";
 import { produce } from "immer";
-import { firestore } from "../../shared/firebase";
+import { firestore, storage } from "../../shared/firebase";
 import "moment";
 import moment from "moment";
+import { setPreview } from "./image";
 
 //action
 const SETPOST = "SET_POST";
 const ADDPOST = "ADD_POST";
+const LOADING = "Loading";
 
 //action creator
-const setPost = createAction(SETPOST, (post_list) => ({ post_list }));
+const setPost = createAction(SETPOST, (post_list, paging) => ({
+  post_list,
+  paging,
+}));
 const addPost = createAction(ADDPOST, (post) => ({ post }));
+const loading = createAction(LOADING, (is_loading) => ({ is_loading }));
 
 const init = {
   list: [],
+  paging: { start: null, next: null, size: 3 },
+  is_loading: false,
 };
 const initialPost = {
   image_url:
@@ -39,23 +47,94 @@ const addPostFB = (contents = "") => {
       contents: contents,
       insert_dt: moment().format("YYYY-MM-DD hh:mm:ss"),
     };
+    const _image = getState().image.preview;
+    const _upload = storage
+      .ref(`images/${user_info.user_id}_${new Date().getTime()}`)
+      .putString(_image, "data_url");
+
+    _upload.then((snapshot) => {
+      snapshot.ref
+        .getDownloadURL()
+        .then((url) => {
+          console.log(url);
+
+          return url;
+        })
+        .then((url) => {
+          postDB
+            .add({ ...user_info, ..._post, image_url: url })
+            .then((doc) => {
+              let post = { user_info, ..._post, id: doc.id, image_url: url };
+              dispatch(addPost(post));
+              dispatch(setPreview(null));
+              history.replace("/");
+            })
+            .catch((error) => {
+              console.log("post 작성에 실패했습니다.", error);
+            });
+        })
+        .catch((error) => {
+          console.log("앗! 이미지업로드 이상", error);
+        });
+    });
     //
-    postDB
-      .add({ ...user_info, ..._post })
-      .then((doc) => {
-        let post = { user_info, ..._post, id: doc.id };
-        dispatch(addPost(post));
-      })
-      .catch((error) => {
-        console.log("post 작성에 실패했습니다.", error);
-      });
-    history.replace("/");
   };
 };
 
-const getPostFB = () => {
+const getPostFB = (start = null, size = 3) => {
   return function (dispatch, getState, { history }) {
+    let _paging = getState().post.paging;
+    if (_paging.start && !_paging.next) {
+      return;
+    }
+
+    dispatch(loading(true));
     const postDB = firestore.collection("post");
+
+    let query = postDB.orderBy("insert_dt", "desc");
+
+    if (start) {
+      query = query.startAt(start);
+    }
+
+    query
+      .limit(size + 1)
+      .get()
+      .then((docs) => {
+        let post_list = [];
+
+        let paging = {
+          start: docs.docs[0],
+          next:
+            docs.docs.length === size + 1
+              ? docs.docs[docs.docs.length - 1]
+              : null,
+          size: size,
+        };
+
+        docs.forEach((doc) => {
+          let _post = {
+            id: doc.id,
+            ...doc.data(),
+          };
+          let post = {
+            id: doc.id,
+            user_info: {
+              user_name: _post.user_name,
+              user_profile: _post.user_profile,
+              user_id: _post.user_id,
+            },
+            image_url: _post.image_url,
+            contents: _post.contents,
+            comment_cnt: _post.comment_cnt,
+            insert_dt: _post.insert_dt,
+          };
+          post_list.push(post);
+        });
+        post_list.pop();
+        dispatch(setPost(post_list, paging));
+      });
+    return;
     postDB.get().then((docs) => {
       let post_list = [];
       docs.forEach((doc) => {
@@ -66,7 +145,7 @@ const getPostFB = () => {
         let post = {
           id: doc.id,
           user_info: {
-            name: _post.user_name,
+            user_name: _post.user_name,
             user_profile: _post.user_profile,
             user_id: _post.user_id,
           },
@@ -87,11 +166,17 @@ export default handleActions(
   {
     [SETPOST]: (state, action) =>
       produce(state, (draft) => {
-        draft.list = action.payload.post_list;
+        draft.list.push(...action.payload.post_list);
+        draft.paging = action.payload.paging;
+        draft.is_loading = false;
       }),
     [ADDPOST]: (state, action) =>
       produce(state, (draft) => {
         draft.list.unshift(action.payload.post);
+      }),
+    [LOADING]: (state, action) =>
+      produce(state, (draft) => {
+        draft.is_loading = action.payload.is_loading;
       }),
   },
   init

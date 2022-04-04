@@ -7,6 +7,7 @@ import { useDispatch, useSelector } from "react-redux";
 import Signup from "./Signup";
 import Login from "./Login";
 import Add from "./Add";
+import Notice from "./Notice";
 import { loginCheckFB } from "./redux/modules/user";
 import { apiKey } from "./shared/firebase";
 
@@ -37,6 +38,9 @@ function App() {
       </Route>
       <Route path="/write">
         <Add />
+      </Route>
+      <Route path="/notice">
+        <Notice />
       </Route>
     </div>
   );

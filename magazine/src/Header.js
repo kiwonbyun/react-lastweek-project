@@ -24,7 +24,13 @@ const Header = (props) => {
         ></img>
         <div>
           <button>내정보</button>
-          <button>알림</button>
+          <button
+            onClick={() => {
+              history.push("/notice");
+            }}
+          >
+            알림
+          </button>
           <button
             onClick={() => {
               dispatch(logoutFB({}));

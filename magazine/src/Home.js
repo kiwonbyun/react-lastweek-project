@@ -4,42 +4,52 @@ import styled from "styled-components";
 import { apiKey } from "./shared/firebase";
 import { useHistory } from "react-router-dom";
 import { actionCreators } from "./redux/modules/post";
+import InfinityScroll from "./shared/InfinityScroll";
 
 const Home = (props) => {
   const history = useHistory();
   const dispatch = useDispatch();
   const post_list = useSelector((state) => state.post.list);
+  const is_loading = useSelector((state) => state.post.is_loading);
+  const paging = useSelector((state) => state.post.paging);
   React.useEffect(() => {
     if (post_list.length === 0) {
       dispatch(actionCreators.getPostFB());
     }
   }, []);
-  console.log(post_list);
   const is_login = useSelector((state) => state.user.is_login);
   const _session_key = `firebase:authUser:${apiKey}:[DEFAULT]`;
   const is_session = sessionStorage.getItem(_session_key) ? true : false;
   if (is_login && is_session) {
     return (
       <div>
-        {post_list.map((list, index) => {
-          return (
-            <PostCard key={index}>
-              <div>
-                <img src={list.user_info.user_profile}></img>
-                <h3>{list.user_info.name}</h3>
-                <span>{list.insert_dt}</span>
-              </div>
-              <div>
-                <span>{list.contents}</span>
-                <img src={list.image_url}></img>
-              </div>
-              <div>
-                <span>좋아요 {}개</span>
-                <span>댓글 {list.comment_cnt}개</span>
-              </div>
-            </PostCard>
-          );
-        })}
+        <InfinityScroll
+          callNext={() => {
+            dispatch(actionCreators.getPostFB(paging.next));
+          }}
+          is_next={paging.next ? true : false}
+          loading={is_loading}
+        >
+          {post_list.map((list, index) => {
+            return (
+              <PostCard key={index}>
+                <div>
+                  <img src={list.user_info.user_profile}></img>
+                  <h3>{list.user_info.user_name}</h3>
+                  <span>{list.insert_dt}</span>
+                </div>
+                <div>
+                  <span>{list.contents}</span>
+                  <img src={list.image_url}></img>
+                </div>
+                <div>
+                  <span>좋아요 {}개</span>
+                  <span>댓글 {list.comment_cnt}개</span>
+                </div>
+              </PostCard>
+            );
+          })}
+        </InfinityScroll>
         <Addbutton onClick={() => history.push("/write")}>글쓰기</Addbutton>
       </div>
     );
