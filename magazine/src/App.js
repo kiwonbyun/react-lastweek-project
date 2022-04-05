@@ -8,6 +8,7 @@ import Signup from "./Signup";
 import Login from "./Login";
 import Add from "./Add";
 import Notice from "./Notice";
+import Detail from "./Detail";
 import { loginCheckFB } from "./redux/modules/user";
 import { apiKey } from "./shared/firebase";
 
@@ -41,6 +42,9 @@ function App() {
       </Route>
       <Route path="/notice">
         <Notice />
+      </Route>
+      <Route path="/post/:id">
+        <Detail />
       </Route>
     </div>
   );

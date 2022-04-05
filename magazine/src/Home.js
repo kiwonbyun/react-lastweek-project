@@ -40,7 +40,12 @@ const Home = (props) => {
                 </div>
                 <div>
                   <span>{list.contents}</span>
-                  <img src={list.image_url}></img>
+                  <img
+                    onClick={() => {
+                      history.push(`/post/${list.id}`);
+                    }}
+                    src={list.image_url}
+                  ></img>
                 </div>
                 <div>
                   <span>좋아요 {}개</span>
@@ -125,6 +130,7 @@ const PostCard = styled.div`
       img {
         margin: auto;
         width: 70%;
+        cursor: pointer;
       }
     }
     &:last-child {
