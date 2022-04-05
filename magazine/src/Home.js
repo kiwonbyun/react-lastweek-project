@@ -114,6 +114,7 @@ const PostCard = styled.div`
       justify-content: space-between;
       align-items: center;
       padding: 5px 20px;
+      font-size: 18px;
       img {
         width: 50px;
         height: 50px;
@@ -123,6 +124,7 @@ const PostCard = styled.div`
     &:nth-child(2) {
       display: flex;
       flex-direction: column;
+      font-size: 20px;
       span {
         margin: 10px;
         padding: 0px 10px;
